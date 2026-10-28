@@ -9,7 +9,7 @@
 </style>
 </head>
 <body><main>
-<header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div><button id="reset" type="button">Ryd alle felter</button></header>
+<header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div></header>
 <div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
 <h2>Kontaktoplysninger</h2><div class="contacts" id="contacts"></div>
 <p class="note">Felterne kan altid ændres. Ændringer gemmes ikke og deles ikke automatisk med andre. Ved genindlæsning nulstilles oversigten.</p>
@@ -37,18 +37,14 @@ function populate(){
   const sub=document.createElement('small');sub.textContent=fmt.format(mon)+' – '+fmt.format(sun);heading.append(sub);tr.append(heading);
   for(let col=0;col<5;col++){
    const td=document.createElement('td'),sel=document.createElement('select');
-   sel.setAttribute('aria-label',names[col]+' uge '+week);
-   for(const label of ['Ledig',...names]){const opt=document.createElement('option');opt.value=label==='Ledig'?'':label;opt.textContent=label;sel.append(opt)}
+   sel.setAttribute('aria-label',['Chamonix','Sydfrankrig','Rom','Toscana','Mallorca'][col]+' uge '+week);
+   for(const label of ['Ikke udfyldt',...names]){const opt=document.createElement('option');opt.value=label==='Ikke udfyldt'?'':label;opt.textContent=label;sel.append(opt)}
    td.append(sel);tr.append(td);
   }
   tbody.append(tr);
  }
 }
 populate();
-document.getElementById('reset').addEventListener('click',()=>{if(confirm('Vil du rydde alle felter?'))populate()});
 const contactDiv=document.getElementById('contacts');
 for(const c of contacts){const box=document.createElement('div');box.className='contact';const title=document.createElement('strong');title.textContent=c.name;box.append(title);for(const [label,value,prefix] of [['Mail',c.email,'mailto:'],['Tlf.',c.phone,'tel:']]){const line=document.createElement('div');line.append(label+': ');if(value){const a=document.createElement('a');a.href=prefix+value;a.textContent=value;line.append(a)}else line.append('Ikke oplyst');box.append(line)}contactDiv.append(box)}
 </script></body></html>
-
-
-
