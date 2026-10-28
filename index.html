@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21-5 DK22 - 2027</title>
+<style>
+:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#183148;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:30px 16px 60px}h1{margin:0;font-size:clamp(28px,5vw,40px)}p{color:#526a7a}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}.table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}table{width:100%;border-collapse:collapse;min-width:910px}th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}small{display:block;color:#64788b;font-weight:400}select{width:100%;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}select:focus{outline:2px solid #247eb0}h2{margin-top:32px}.contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.contact{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 12px #122e4510}.contact strong{display:block;margin-bottom:8px}.contact a{color:#125980;overflow-wrap:anywhere}.note{font-size:13px;margin-top:15px}
+</style>
+</head>
+<body><main>
+<header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div><button id="reset" type="button">Ryd alle felter</button></header>
+<div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
+<h2>Kontaktoplysninger</h2><div class="contacts" id="contacts"></div>
+<p class="note">Felterne kan altid ændres. Ændringer gemmes ikke og deles ikke automatisk med andre. Ved genindlæsning nulstilles oversigten.</p>
+</main>
+<script>
+'use strict';
+const names=['Helene & Peter','XX & YY','YY & XX','XY & XY','YX & YX'];
+const contacts=[
+{name:'Helene & Peter',email:'peterjuhlolsen@gmail.com',phone:'27208913'},
+{name:'XX & YY',email:'XXYY@gmail.com',phone:'20123456'},
+{name:'YY & XX',email:'YYXX@gmail.com',phone:'30123456'},
+{name:'XY & XY',email:'',phone:''},
+{name:'YX & YX',email:'',phone:''}
+];
+const fmt=new Intl.DateTimeFormat('da-DK',{day:'numeric',month:'short',timeZone:'UTC'});
+const tbody=document.getElementById('rows');
+function populate(){
+ tbody.replaceChildren();
+ // ISO week 1 in 2027 starts Monday, January 4.
+ const start=Date.UTC(2027,0,4);
+ for(let week=1;week<=52;week++){
+  const mon=new Date(start+(week-1)*7*86400000),sun=new Date(start+((week-1)*7+6)*86400000);
+  const tr=document.createElement('tr'),heading=document.createElement('td');
+  heading.append(document.createTextNode('Uge '+week));
+  const sub=document.createElement('small');sub.textContent=fmt.format(mon)+' – '+fmt.format(sun);heading.append(sub);tr.append(heading);
+  for(let col=0;col<5;col++){
+   const td=document.createElement('td'),sel=document.createElement('select');
+   sel.setAttribute('aria-label',names[col]+' uge '+week);
+   for(const label of ['Ledig',...names]){const opt=document.createElement('option');opt.value=label==='Ledig'?'':label;opt.textContent=label;sel.append(opt)}
+   td.append(sel);tr.append(td);
+  }
+  tbody.append(tr);
+ }
+}
+populate();
+document.getElementById('reset').addEventListener('click',()=>{if(confirm('Vil du rydde alle felter?'))populate()});
+const contactDiv=document.getElementById('contacts');
+for(const c of contacts){const box=document.createElement('div');box.className='contact';const title=document.createElement('strong');title.textContent=c.name;box.append(title);for(const [label,value,prefix] of [['Mail',c.email,'mailto:'],['Tlf.',c.phone,'tel:']]){const line=document.createElement('div');line.append(label+': ');if(value){const a=document.createElement('a');a.href=prefix+value;a.textContent=value;line.append(a)}else line.append('Ikke oplyst');box.append(line)}contactDiv.append(box)}
+</script></body></html>
