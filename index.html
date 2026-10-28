@@ -6,13 +6,15 @@
 <title>21-5 DK22 - 2027</title>
 <style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#183148;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:30px 16px 60px}h1{margin:0;font-size:clamp(28px,5vw,40px)}p{color:#526a7a}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}.table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}table{width:100%;border-collapse:collapse;min-width:910px}th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}small{display:block;color:#64788b;font-weight:400}select{width:100%;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}select.filled{background:#d9efff;border-color:#83badb}select:focus{outline:2px solid #247eb0}select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;padding:8px 12px;border-radius:8px;background:#e9f3fa;color:#17445d}.status.error{background:#ffe8e8;color:#8b2222}h2{margin-top:32px}.contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.contact{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 12px #122e4510}.contact strong{display:block;margin-bottom:8px}.contact a{color:#125980;overflow-wrap:anywhere}.note{font-size:13px;margin-top:15px}
+.loginbox{max-width:480px;background:#fff;border-radius:14px;padding:24px;box-shadow:0 4px 20px #122e4514}.loginbox h2{margin-top:0}.loginbox form{display:grid;gap:14px}.loginbox label{display:grid;gap:5px;font-weight:600}.loginbox input,.contact input{width:100%;padding:10px;border:1px solid #b7cbd9;border-radius:8px;font:inherit}.contact label{display:block;font-size:14px;margin:8px 0}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.errorText{color:#a01a1a}.note{line-height:1.5}[hidden]{display:none!important}
 </style>
 </head>
 <body><main>
 <header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div><div class="status" id="status" role="status" aria-live="polite">Forbinder til fælles oversigt…</div></header>
-<div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
-<h2>Kontaktoplysninger</h2><div class="contacts" id="contacts"></div>
-<p class="note">Valg gemmes i den fælles oversigt og vises automatisk for alle. Alle felter kan altid ændres; der er ingen låste reservationer.</p>
+<section id="loginBox" class="loginbox"><h2>Log ind på fælles oversigt</h2><p>Indtast den fælles adgangskode for at åbne oversigten. Du skal ikke indtaste e-mail.</p><form id="loginForm"><label>Fælles adgangskode<input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Adgangskode"></label><button type="submit">Log ind</button></form><p id="loginError" role="alert" class="errorText"></p></section>
+<section id="privateContent" hidden><div class="toolbar"><span>Du er logget ind på den fælles oversigt.</span><button id="logout" type="button">Log ud</button></div><div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
+<h2>Kontaktoplysninger</h2><p>Kontaktoplysningerne gemmes også bag login. Udfyld eller ret dem her:</p><div class="contacts" id="contacts"></div><button type="button" id="saveContacts">Gem kontaktoplysninger</button>
+<p class="note">Valg gemmes i den fælles oversigt og vises automatisk for alle. Alle felter kan altid ændres; der er ingen låste reservationer.</p></section>
 </main>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -20,13 +22,19 @@
 <script>
 'use strict';
 const names=['Helene & Peter','XX & YY','YY & XX','XY & XY','YX & YX'];
-const contacts=[
-{name:'Helene & Peter',email:'peterjuhlolsen@gmail.com',phone:'27208913'},
-{name:'XX & YY',email:'XXYY@gmail.com',phone:'20123456'},
-{name:'YY & XX',email:'YYXX@gmail.com',phone:'30123456'},
-{name:'XY & XY',email:'',phone:''},
-{name:'YX & YX',email:'',phone:''}
-];
+const destinations=['Chamonix','Sydfrankrig','Rom','Toscana','Mallorca'];
+const privateContent=document.getElementById('privateContent');
+const loginBox=document.getElementById('loginBox');
+const loginForm=document.getElementById('loginForm');
+const SHARED_LOGIN_EMAIL='peterjuhlolsen@gmail.com';
+const passwordInput=document.getElementById('loginPassword');
+const loginError=document.getElementById('loginError');
+const contactsEl=document.getElementById('contacts');
+let contactsRef=null;
+let contactsListener=null;
+let reservationsRef=null;
+let reservationsListener=null;
+let initialized=false;
 const fmt=new Intl.DateTimeFormat('da-DK',{day:'numeric',month:'short',timeZone:'UTC'});
 const tbody=document.getElementById('rows');
 const selectors=new Map();
@@ -53,8 +61,22 @@ function populate(){
  }
 }
 populate();
-const contactDiv=document.getElementById('contacts');
-for(const c of contacts){const box=document.createElement('div');box.className='contact';const title=document.createElement('strong');title.textContent=c.name;box.append(title);for(const [label,value,prefix] of [['Mail',c.email,'mailto:'],['Tlf.',c.phone,'tel:']]){const line=document.createElement('div');line.append(label+': ');if(value){const a=document.createElement('a');a.href=prefix+value;a.textContent=value;line.append(a)}else line.append('Ikke oplyst');box.append(line)}contactDiv.append(box)}
+function drawContacts(data={}){
+ contactsEl.replaceChildren();
+ names.forEach((name,i)=>{
+  const box=document.createElement('div');box.className='contact';
+  const title=document.createElement('strong');title.textContent=name;box.append(title);
+  const key='person'+i;
+  for(const [field,label,type] of [['email','Mail','email'],['phone','Tlf.','tel']]){
+   const labelEl=document.createElement('label');labelEl.textContent=label;
+   const input=document.createElement('input');input.type=type;input.dataset.contact=key;input.dataset.field=field;
+   input.value=(data[key]&&data[key][field])||'';
+   labelEl.append(input);box.append(labelEl);
+  }
+  contactsEl.append(box);
+ });
+}
+drawContacts();
 // Firebase-konfiguration til fælles reservationer.
 const firebaseConfig={
  apiKey: "AIzaSyAsrQXHn_FCI-057t7wHZKZPL5Q5R4qNn0",
@@ -63,42 +85,65 @@ const firebaseConfig={
  projectId: "dk22-343b2",
  appId: "1:528102490847:web:c636b1cce37a99bae89f6a"
 };
-if(firebaseConfig.apiKey.startsWith('INDSÆT') || firebaseConfig.databaseURL.startsWith('INDSÆT')){
- status('Opsætning mangler: Indsæt dine Firebase-oplysninger i index.html.',true);
-}else{
- try{
-  firebase.initializeApp(firebaseConfig);
-  const auth=firebase.auth();
-  const dataRef=firebase.database().ref('reservationer2027');
-  auth.signInAnonymously().then(()=>{
-   let initialized=false;
-   dataRef.on('value',snapshot=>{
-    const data=snapshot.val()||{};
-    for(const [key,sel] of selectors){
-     const saved=data[key]||'';
-     if(sel.value!==saved)sel.value=saved;
-     updateColor(sel);
-    }
-    initialized=true;
-    toggle(true);
-    status('● Forbundet – ændringer gemmes og deles automatisk');
-   },error=>{toggle(false);status('Kan ikke læse fælles oversigt: '+error.message,true)});
-   for(const [key,sel] of selectors){
-    sel.addEventListener('change',async()=>{
-     if(!initialized)return;
-     const selected=sel.value;
-     updateColor(sel);
-     sel.disabled=true;
-     status('Gemmer ændring…');
-     try{
-      // null betyder Ikke udfyldt og sletter kun det valgte felt.
-      await dataRef.child(key).set(selected || null);
-      status('● Forbundet – ændringer gemmes og deles automatisk');
-     }catch(err){status('Ændringen kunne ikke gemmes: '+err.message,true)}
-     finally{sel.disabled=false}
-    });
-   }
-  }).catch(err=>status('Kunne ikke logge ind anonymt: '+err.message,true));
- }catch(err){status('Firebase-fejl: '+err.message,true)}
+const allowedOptions=new Set(['',...names]);
+function renderReservations(data={}){
+ for(const [key,sel] of selectors){
+  const saved=allowedOptions.has(data[key]) ? (data[key]||'') : '';
+  if(sel.value!==saved)sel.value=saved;
+  updateColor(sel);
+ }
 }
+try{
+ firebase.initializeApp(firebaseConfig);
+ const auth=firebase.auth();
+ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+ const db=firebase.database();
+ loginForm.addEventListener('submit',async e=>{
+  e.preventDefault();loginError.textContent='';
+  const password=passwordInput.value;
+  if(!password)return;
+  status('Logger ind…');
+  try{
+   await auth.signInWithEmailAndPassword(SHARED_LOGIN_EMAIL,password);
+   passwordInput.value='';
+  }catch(error){status('Login mislykkedes – kontrollér adgangskoden.',true);loginError.textContent='Kunne ikke logge ind. Kontrollér adgangskoden og prøv igen.'}
+ });
+ document.getElementById('logout').addEventListener('click',()=>auth.signOut());
+ auth.onAuthStateChanged(user=>{
+  if(reservationsRef){reservationsRef.off();reservationsRef=null;}
+  if(contactsRef){contactsRef.off();contactsRef=null;}
+  initialized=false;toggle(false);
+  privateContent.hidden=true;loginBox.hidden=!!user;
+  if(!user){status('Log ind for at se og ændre reservationer');return;}
+  status('Indlæser fælles reservationer…');
+  reservationsRef=db.ref('reservationer2027');
+  reservationsRef.on('value',snapshot=>{
+   renderReservations(snapshot.val()||{});
+   initialized=true;toggle(true);privateContent.hidden=false;
+   status('● Forbundet – ændringer gemmes og deles automatisk');
+  },err=>{toggle(false);privateContent.hidden=true;status('Adgang til reservationerne blev afvist: '+err.message,true)});
+  contactsRef=db.ref('kontaktoplysninger2027');
+  contactsRef.on('value',snapshot=>{drawContacts(snapshot.val()||{})},err=>status('Kunne ikke læse kontaktoplysninger: '+err.message,true));
+ });
+ for(const [key,sel] of selectors){
+  sel.addEventListener('change',async()=>{
+   if(!initialized||!reservationsRef)return;
+   const selected=sel.value;updateColor(sel);sel.disabled=true;status('Gemmer ændring…');
+   try{await reservationsRef.child(key).set(selected||null);status('● Forbundet – ændringer gemmes og deles automatisk')}
+   catch(err){status('Ændringen kunne ikke gemmes: '+err.message,true)}
+   finally{sel.disabled=false}
+  });
+ }
+ document.getElementById('saveContacts').addEventListener('click',async()=>{
+  if(!contactsRef)return;
+  const info={};
+  for(const input of contactsEl.querySelectorAll('input[data-contact]')){
+   const key=input.dataset.contact;
+   if(!info[key])info[key]={};
+   info[key][input.dataset.field]=input.value.trim();
+  }
+  try{await contactsRef.set(info);status('Kontaktoplysninger gemt');setTimeout(()=>status('● Forbundet – ændringer gemmes og deles automatisk'),2200)}
+  catch(err){status('Kontaktoplysninger kunne ikke gemmes: '+err.message,true)}
+ });
+}catch(err){status('Firebase-fejl: '+err.message,true)}
 </script></body></html>
