@@ -27,6 +27,7 @@ const privateContent=document.getElementById('privateContent');
 const loginBox=document.getElementById('loginBox');
 const loginForm=document.getElementById('loginForm');
 const SHARED_LOGIN_EMAIL='peterjuhlolsen@gmail.com';
+const AUTHORIZED_UID='oAJkjlPAe1gt8RTetQ0hOvRcD4D3';
 const passwordInput=document.getElementById('loginPassword');
 const loginError=document.getElementById('loginError');
 const contactsEl=document.getElementById('contacts');
@@ -115,6 +116,12 @@ try{
   initialized=false;toggle(false);
   privateContent.hidden=true;loginBox.hidden=!!user;
   if(!user){status('Log ind for at se og ændre reservationer');return;}
+  if(user.uid !== AUTHORIZED_UID){
+   loginBox.hidden=false;
+   status('Tidligere login passer ikke til den fælles konto. Log ind med den fælles adgangskode.',true);
+   auth.signOut().catch(err=>status('Kunne ikke nulstille gammelt login: '+err.message,true));
+   return;
+  }
   status('Indlæser fælles reservationer…');
   reservationsRef=db.ref('reservationer2027');
   reservationsRef.on('value',snapshot=>{
