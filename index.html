@@ -49,3 +49,6 @@ document.getElementById('reset').addEventListener('click',()=>{if(confirm('Vil d
 const contactDiv=document.getElementById('contacts');
 for(const c of contacts){const box=document.createElement('div');box.className='contact';const title=document.createElement('strong');title.textContent=c.name;box.append(title);for(const [label,value,prefix] of [['Mail',c.email,'mailto:'],['Tlf.',c.phone,'tel:']]){const line=document.createElement('div');line.append(label+': ');if(value){const a=document.createElement('a');a.href=prefix+value;a.textContent=value;line.append(a)}else line.append('Ikke oplyst');box.append(line)}contactDiv.append(box)}
 </script></body></html>
+
+
+
