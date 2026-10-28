@@ -5,15 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>21-5 DK22 - 2027</title>
 <style>
-:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#183148;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:30px 16px 60px}h1{margin:0;font-size:clamp(28px,5vw,40px)}p{color:#526a7a}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}.table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}table{width:100%;border-collapse:collapse;min-width:910px}th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}small{display:block;color:#64788b;font-weight:400}select{width:100%;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}select:focus{outline:2px solid #247eb0}h2{margin-top:32px}.contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.contact{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 12px #122e4510}.contact strong{display:block;margin-bottom:8px}.contact a{color:#125980;overflow-wrap:anywhere}.note{font-size:13px;margin-top:15px}
+:root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#183148;background:#f3f6fa}*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:30px 16px 60px}h1{margin:0;font-size:clamp(28px,5vw,40px)}p{color:#526a7a}header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}.table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}table{width:100%;border-collapse:collapse;min-width:910px}th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}small{display:block;color:#64788b;font-weight:400}select{width:100%;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}select.filled{background:#d9efff;border-color:#83badb}select:focus{outline:2px solid #247eb0}select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;padding:8px 12px;border-radius:8px;background:#e9f3fa;color:#17445d}.status.error{background:#ffe8e8;color:#8b2222}h2{margin-top:32px}.contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.contact{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 12px #122e4510}.contact strong{display:block;margin-bottom:8px}.contact a{color:#125980;overflow-wrap:anywhere}.note{font-size:13px;margin-top:15px}
 </style>
 </head>
 <body><main>
-<header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div></header>
+<header><div><h1>21-5 DK22 - 2027</h1><p>Ugeoversigt for Chamonix, Sydfrankrig, Rom, Toscana og Mallorca</p></div><div class="status" id="status" role="status" aria-live="polite">Forbinder til fælles oversigt…</div></header>
 <div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
 <h2>Kontaktoplysninger</h2><div class="contacts" id="contacts"></div>
-<p class="note">Felterne kan altid ændres. Ændringer gemmes ikke og deles ikke automatisk med andre. Ved genindlæsning nulstilles oversigten.</p>
+<p class="note">Valg gemmes i den fælles oversigt og vises automatisk for alle. Alle felter kan altid ændres; der er ingen låste reservationer.</p>
 </main>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script>
 'use strict';
 const names=['Helene & Peter','XX & YY','YY & XX','XY & XY','YX & YX'];
@@ -26,6 +29,11 @@ const contacts=[
 ];
 const fmt=new Intl.DateTimeFormat('da-DK',{day:'numeric',month:'short',timeZone:'UTC'});
 const tbody=document.getElementById('rows');
+const selectors=new Map();
+const statusEl=document.getElementById('status');
+function status(message,error=false){statusEl.textContent=message;statusEl.classList.toggle('error',error)}
+function toggle(enabled){for(const s of selectors.values())s.disabled=!enabled}
+function updateColor(sel){sel.classList.toggle('filled',sel.value!=='')}
 function populate(){
  tbody.replaceChildren();
  // ISO week 1 in 2027 starts Monday, January 4.
@@ -39,7 +47,7 @@ function populate(){
    const td=document.createElement('td'),sel=document.createElement('select');
    sel.setAttribute('aria-label',['Chamonix','Sydfrankrig','Rom','Toscana','Mallorca'][col]+' uge '+week);
    for(const label of ['Ikke udfyldt',...names]){const opt=document.createElement('option');opt.value=label==='Ikke udfyldt'?'':label;opt.textContent=label;sel.append(opt)}
-   td.append(sel);tr.append(td);
+   sel.dataset.key='uge'+week+'_sted'+col;selectors.set(sel.dataset.key,sel);sel.disabled=true;updateColor(sel);td.append(sel);tr.append(td);
   }
   tbody.append(tr);
  }
@@ -47,4 +55,50 @@ function populate(){
 populate();
 const contactDiv=document.getElementById('contacts');
 for(const c of contacts){const box=document.createElement('div');box.className='contact';const title=document.createElement('strong');title.textContent=c.name;box.append(title);for(const [label,value,prefix] of [['Mail',c.email,'mailto:'],['Tlf.',c.phone,'tel:']]){const line=document.createElement('div');line.append(label+': ');if(value){const a=document.createElement('a');a.href=prefix+value;a.textContent=value;line.append(a)}else line.append('Ikke oplyst');box.append(line)}contactDiv.append(box)}
+// Udfyld disse oplysninger fra Firebase Console → Project settings → Your apps → Web app.
+const firebaseConfig={
+ apiKey: "INDSÆT_API_KEY",
+ authDomain: "INDSÆT_PROJECT_ID.firebaseapp.com",
+ databaseURL: "INDSÆT_DATABASE_URL",
+ projectId: "INDSÆT_PROJECT_ID",
+ appId: "INDSÆT_APP_ID"
+};
+if(firebaseConfig.apiKey.startsWith('INDSÆT') || firebaseConfig.databaseURL.startsWith('INDSÆT')){
+ status('Opsætning mangler: Indsæt dine Firebase-oplysninger i index.html.',true);
+}else{
+ try{
+  firebase.initializeApp(firebaseConfig);
+  const auth=firebase.auth();
+  const dataRef=firebase.database().ref('reservationer2027');
+  auth.signInAnonymously().then(()=>{
+   let initialized=false;
+   dataRef.on('value',snapshot=>{
+    const data=snapshot.val()||{};
+    for(const [key,sel] of selectors){
+     const saved=data[key]||'';
+     if(sel.value!==saved)sel.value=saved;
+     updateColor(sel);
+    }
+    initialized=true;
+    toggle(true);
+    status('● Forbundet – ændringer gemmes og deles automatisk');
+   },error=>{toggle(false);status('Kan ikke læse fælles oversigt: '+error.message,true)});
+   for(const [key,sel] of selectors){
+    sel.addEventListener('change',async()=>{
+     if(!initialized)return;
+     const selected=sel.value;
+     updateColor(sel);
+     sel.disabled=true;
+     status('Gemmer ændring…');
+     try{
+      // null betyder Ikke udfyldt og sletter kun det valgte felt.
+      await dataRef.child(key).set(selected || null);
+      status('● Forbundet – ændringer gemmes og deles automatisk');
+     }catch(err){status('Ændringen kunne ikke gemmes: '+err.message,true)}
+     finally{sel.disabled=false}
+    });
+   }
+  }).catch(err=>status('Kunne ikke logge ind anonymt: '+err.message,true));
+ }catch(err){status('Firebase-fejl: '+err.message,true)}
+}
 </script></body></html>
