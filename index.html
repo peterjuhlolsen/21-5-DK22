@@ -6,24 +6,27 @@
 <title>21-5 DK22 - 2027</title>
 <style>
 :root{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;color:#183148;background:#f3f6fa}
-*{box-sizing:border-box}body{margin:0}main{max-width:1240px;margin:auto;padding:30px 16px 60px}
+*{box-sizing:border-box}body{margin:0}main{max-width:1500px;margin:auto;padding:30px 16px 60px}
 h1{margin:0;font-size:clamp(28px,5vw,40px)}p{color:#526a7a}
 header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px}
 button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}
 button.secondary{background:#526a7a}button.danger{background:#9b3434}
 .table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}
-table{width:100%;border-collapse:collapse;min-width:1700px}
+table{width:100%;border-collapse:collapse;min-width:1000px;table-layout:fixed}
 th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}
 thead th{background:#183e5d;color:white;white-space:nowrap}
+thead th:first-child,tbody td:first-child{width:78px}
+tbody td{min-width:0;overflow:hidden}
+tbody td select{min-width:0}
 .floating-week-header{position:fixed;top:0;z-index:1000;overflow:hidden;pointer-events:none;box-shadow:0 3px 9px #122e4524}
 .floating-week-header table{margin:0;border-collapse:collapse;table-layout:fixed}
 .floating-week-header th{background:#183e5d;color:white;white-space:nowrap;padding:9px 10px;text-align:left;border-bottom:1px solid #e5ebf0;font-weight:700}
 tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}
 select{width:100%;max-width:240px;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}
-.split-bookings{display:grid;grid-template-columns:156px 156px;gap:8px;width:320px;max-width:none}
+.split-bookings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;max-width:100%}
 .booking-part{display:flex;flex-direction:column;gap:5px;min-width:0}
 .booking-part label{font-size:12px;font-weight:650;color:#526a7a;white-space:nowrap}
-.booking-part select{width:100%;min-width:0;padding:9px 4px;font-size:13px}
+.booking-part select{display:block;width:100%;max-width:100%;min-width:0;padding:9px 3px;font-size:12px}
 select.filled{background:#d9efff;border-color:#83badb}select:focus{outline:2px solid #247eb0}
 select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;padding:8px 12px;border-radius:8px;background:#e9f3fa;color:#17445d}
 .status.error{background:#ffe8e8;color:#8b2222}h2{margin-top:32px}
