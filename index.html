@@ -12,11 +12,15 @@ header{display:flex;justify-content:space-between;align-items:center;gap:16px;fl
 button{border:0;border-radius:8px;background:#125980;color:white;padding:11px 17px;font:inherit;cursor:pointer}
 button.secondary{background:#526a7a}button.danger{background:#9b3434}
 .table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}
-table{width:100%;border-collapse:collapse;min-width:910px}
+table{width:100%;border-collapse:collapse;min-width:1700px}
 th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}
 thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}
 tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}
-select{width:100%;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}
+select{width:100%;max-width:240px;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}
+.split-bookings{display:grid;grid-template-columns:156px 156px;gap:8px;width:320px;max-width:none}
+.booking-part{display:flex;flex-direction:column;gap:5px;min-width:0}
+.booking-part label{font-size:12px;font-weight:650;color:#526a7a;white-space:nowrap}
+.booking-part select{width:100%;min-width:0;padding:9px 4px;font-size:13px}
 select.filled{background:#d9efff;border-color:#83badb}select:focus{outline:2px solid #247eb0}
 select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;padding:8px 12px;border-radius:8px;background:#e9f3fa;color:#17445d}
 .status.error{background:#ffe8e8;color:#8b2222}h2{margin-top:32px}
@@ -41,7 +45,7 @@ select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;pa
 <p>Se gruppenavne og redigér telefonnumre og e-mailadresser her. Tryk på Gem for at dele ændringerne med alle.</p>
 <div class="contacts" id="contacts"></div>
 <div class="actions"><button type="button" id="saveContacts">Gem grupper og kontaktoplysninger</button><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button></div>
-<p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; datoer er fjernet. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
+<p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; uge 8, 32 og 42 har også en kort reservation i alle destinationer, og uge 16 har en kort reservation i Chamonix. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
 </section>
 </main>
 <script>
@@ -114,9 +118,25 @@ function populate(){
   const tr=document.createElement('tr'),heading=document.createElement('td');
   heading.textContent='Uge '+week;tr.append(heading);
   for(let col=0;col<5;col++){
-   const td=document.createElement('td'),sel=document.createElement('select');
-   sel.setAttribute('aria-label',destinations[col]+' uge '+week);
-   td.append(sel);tr.append(td);selectors.set('uge'+week+'_sted'+col,sel);
+   const td=document.createElement('td');
+   const split=[8,32,42].includes(week)||(col===0&&week===16);
+   const container=split?document.createElement('div'):td;
+   if(split)container.className='split-bookings';
+   for(const isShort of (split?[false,true]:[false])){
+    const key='uge'+week+'_sted'+col+(isShort?'_kort':'');
+    const sel=document.createElement('select');
+    const label=week+(isShort?' (kort)':'');
+    sel.setAttribute('aria-label',destinations[col]+' uge '+label);
+    if(split){
+     const part=document.createElement('div');part.className='booking-part';
+     const caption=document.createElement('label');caption.textContent=label;
+     caption.htmlFor='booking-'+key;sel.id='booking-'+key;
+     part.append(caption,sel);container.append(part);
+    }else{container.append(sel)}
+    selectors.set(key,sel);
+   }
+   if(split)td.append(container);
+   tr.append(td);
   }
   tbody.append(tr);
  }
