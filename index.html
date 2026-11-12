@@ -18,7 +18,7 @@ thead th{background:#183e5d;color:white;white-space:nowrap}
 thead th:first-child,tbody td:first-child{width:78px}
 tbody td{min-width:0;overflow:hidden}
 tbody td select{min-width:0}
-.floating-week-header{position:fixed;top:0;z-index:1000;overflow:hidden;pointer-events:none;box-shadow:0 3px 9px #122e4524}
+.floating-week-header{position:fixed;top:0;z-index:10000;overflow:hidden;pointer-events:none;background:#183e5d;box-shadow:0 3px 9px #122e4524}
 .floating-week-header table{margin:0;border-collapse:collapse;table-layout:fixed}
 .floating-week-header th{background:#183e5d;color:white;white-space:nowrap;padding:9px 10px;text-align:left;border-bottom:1px solid #e5ebf0;font-weight:700}
 tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}
@@ -244,47 +244,58 @@ try{
  });
 }catch(err){status('Firebase-fejl: '+err.message,true)}
 }
-// Keep destination column titles visible during vertical page scrolling,
-// even though the reservations table also scrolls horizontally.
+// Pin a matching header to the viewport while the user scrolls through the
+// reservation rows. The real table retains horizontal scrolling on small screens.
 (function installFloatingWeekHeader(){
  const wrap=document.querySelector('.table-wrap');
  const table=wrap.querySelector('table');
  const original=table.querySelector('thead');
+ const content=document.getElementById('privateContent');
  const floating=document.createElement('div');
  floating.className='floating-week-header';
  floating.hidden=true;
  floating.setAttribute('aria-hidden','true');
  const mirror=document.createElement('table');
- mirror.appendChild(original.cloneNode(true));
+ const mirrorHead=original.cloneNode(true);
+ mirror.append(mirrorHead);
  floating.append(mirror);
  document.body.append(floating);
- function sync(){
+ let pending=false;
+ function update(){
+  pending=false;
+  if(content.hidden || !original.getBoundingClientRect().height){floating.hidden=true;return}
   const rect=wrap.getBoundingClientRect();
-  const heads=Array.from(original.querySelectorAll('th'));
-  const mirrorHeads=Array.from(mirror.querySelectorAll('th'));
-  const headerHeight=original.getBoundingClientRect().height;
-  const show=!document.getElementById('privateContent').hidden &&
-    rect.top < -headerHeight && rect.bottom > headerHeight;
-  floating.hidden=!show;
-  if(!show)return;
+  const h=original.getBoundingClientRect().height;
+  // Show as soon as the original header reaches the top of the viewport.
+  const visible=rect.top <= 0 && rect.bottom > h;
+  floating.hidden=!visible;
+  if(!visible)return;
   floating.style.left=rect.left+'px';
   floating.style.width=rect.width+'px';
-  floating.style.height=headerHeight+'px';
-  mirror.style.width=table.getBoundingClientRect().width+'px';
-  mirror.style.transform='translateX('+(-wrap.scrollLeft)+'px)';
-  mirrorHeads.forEach((th,i)=>{
-   const width=heads[i].getBoundingClientRect().width;
-   th.style.width=width+'px';
-   th.style.minWidth=width+'px';
-   th.style.maxWidth=width+'px';
+  floating.style.height=h+'px';
+  mirror.style.width=table.offsetWidth+'px';
+  mirror.style.minWidth=table.offsetWidth+'px';
+  // Synchronize the six exact widths (including the Uge column).
+  const source=original.querySelectorAll('th');
+  const targets=mirrorHead.querySelectorAll('th');
+  source.forEach((th,i)=>{
+   const w=th.getBoundingClientRect().width;
+   targets[i].style.width=w+'px';
+   targets[i].style.minWidth=w+'px';
+   targets[i].style.maxWidth=w+'px';
   });
+  mirror.style.transform='translateX('+(-wrap.scrollLeft)+'px)';
  }
- window.addEventListener('scroll',sync,{passive:true});
- window.addEventListener('resize',sync);
- wrap.addEventListener('scroll',sync,{passive:true});
- const observer=new MutationObserver(sync);
- observer.observe(document.getElementById('privateContent'),{attributes:true,attributeFilter:['hidden']});
- sync();
+ function schedule(){
+  if(!pending){pending=true;requestAnimationFrame(update)}
+ }
+ // Capture scroll even if the page is inside a nested scrolling container.
+ window.addEventListener('scroll',schedule,{passive:true,capture:true});
+ window.addEventListener('resize',schedule,{passive:true});
+ wrap.addEventListener('scroll',schedule,{passive:true});
+ new MutationObserver(schedule).observe(content,{attributes:true,attributeFilter:['hidden']});
+ if(typeof ResizeObserver!=='undefined')new ResizeObserver(schedule).observe(wrap);
+ schedule();
 })();
 loadFirebase().then(startWebsite).catch(err=>{
  document.getElementById('status').textContent='Firebase-fejl: '+err.message;
