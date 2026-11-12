@@ -51,7 +51,7 @@ select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;pa
 <p>Se gruppenavne og redigér telefonnumre og e-mailadresser her. Tryk på Gem for at dele ændringerne med alle.</p>
 <div class="contacts" id="contacts"></div>
 <div class="actions"><button type="button" id="saveContacts">Gem grupper og kontaktoplysninger</button><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button></div>
-<p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; uge 8, 32 og 42 har også en kort reservation i alle destinationer, og uge 16 har en kort reservation i Chamonix. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
+<p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; uge 1, 8, 32 og 42 har også en kort reservation i alle destinationer, og uge 16 har en kort reservation i Chamonix. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
 </section>
 </main>
 <script>
@@ -125,7 +125,7 @@ function populate(){
   heading.textContent='Uge '+week;tr.append(heading);
   for(let col=0;col<5;col++){
    const td=document.createElement('td');
-   const split=[8,32,42].includes(week)||(col===0&&week===16);
+   const split=[1,8,32,42].includes(week)||(col===0&&week===16);
    const container=split?document.createElement('div'):td;
    if(split)container.className='split-bookings';
    for(const isShort of (split?[false,true]:[false])){
