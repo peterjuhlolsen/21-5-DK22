@@ -14,7 +14,10 @@ button.secondary{background:#526a7a}button.danger{background:#9b3434}
 .table-wrap{overflow:auto;background:white;border-radius:12px;box-shadow:0 4px 20px #122e4514}
 table{width:100%;border-collapse:collapse;min-width:1700px}
 th,td{border-bottom:1px solid #e5ebf0;padding:9px 10px;text-align:left}
-thead th{position:sticky;top:0;background:#183e5d;color:white;white-space:nowrap}
+thead th{background:#183e5d;color:white;white-space:nowrap}
+.floating-week-header{position:fixed;top:0;z-index:1000;overflow:hidden;pointer-events:none;box-shadow:0 3px 9px #122e4524}
+.floating-week-header table{margin:0;border-collapse:collapse;table-layout:fixed}
+.floating-week-header th{background:#183e5d;color:white;white-space:nowrap;padding:9px 10px;text-align:left;border-bottom:1px solid #e5ebf0;font-weight:700}
 tbody tr:nth-child(even){background:#f8fafc}td:first-child{white-space:nowrap;font-weight:600}
 select{width:100%;max-width:240px;padding:9px;border:1px solid #ccd8e2;border-radius:7px;background:white;font:inherit;color:#213e53}
 .split-bookings{display:grid;grid-template-columns:156px 156px;gap:8px;width:320px;max-width:none}
@@ -129,9 +132,8 @@ function populate(){
     sel.setAttribute('aria-label',destinations[col]+' uge '+label);
     if(split){
      const part=document.createElement('div');part.className='booking-part';
-     const caption=document.createElement('label');caption.textContent=label;
-     caption.htmlFor='booking-'+key;sel.id='booking-'+key;
-     part.append(caption,sel);container.append(part);
+     sel.id='booking-'+key;
+     part.append(sel);container.append(part);
     }else{container.append(sel)}
     selectors.set(key,sel);
    }
@@ -239,6 +241,48 @@ try{
  });
 }catch(err){status('Firebase-fejl: '+err.message,true)}
 }
+// Keep destination column titles visible during vertical page scrolling,
+// even though the reservations table also scrolls horizontally.
+(function installFloatingWeekHeader(){
+ const wrap=document.querySelector('.table-wrap');
+ const table=wrap.querySelector('table');
+ const original=table.querySelector('thead');
+ const floating=document.createElement('div');
+ floating.className='floating-week-header';
+ floating.hidden=true;
+ floating.setAttribute('aria-hidden','true');
+ const mirror=document.createElement('table');
+ mirror.appendChild(original.cloneNode(true));
+ floating.append(mirror);
+ document.body.append(floating);
+ function sync(){
+  const rect=wrap.getBoundingClientRect();
+  const heads=Array.from(original.querySelectorAll('th'));
+  const mirrorHeads=Array.from(mirror.querySelectorAll('th'));
+  const headerHeight=original.getBoundingClientRect().height;
+  const show=!document.getElementById('privateContent').hidden &&
+    rect.top < -headerHeight && rect.bottom > headerHeight;
+  floating.hidden=!show;
+  if(!show)return;
+  floating.style.left=rect.left+'px';
+  floating.style.width=rect.width+'px';
+  floating.style.height=headerHeight+'px';
+  mirror.style.width=table.getBoundingClientRect().width+'px';
+  mirror.style.transform='translateX('+(-wrap.scrollLeft)+'px)';
+  mirrorHeads.forEach((th,i)=>{
+   const width=heads[i].getBoundingClientRect().width;
+   th.style.width=width+'px';
+   th.style.minWidth=width+'px';
+   th.style.maxWidth=width+'px';
+  });
+ }
+ window.addEventListener('scroll',sync,{passive:true});
+ window.addEventListener('resize',sync);
+ wrap.addEventListener('scroll',sync,{passive:true});
+ const observer=new MutationObserver(sync);
+ observer.observe(document.getElementById('privateContent'),{attributes:true,attributeFilter:['hidden']});
+ sync();
+})();
 loadFirebase().then(startWebsite).catch(err=>{
  document.getElementById('status').textContent='Firebase-fejl: '+err.message;
  document.getElementById('status').classList.add('error');
