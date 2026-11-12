@@ -38,17 +38,39 @@ select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;pa
 <div class="toolbar"><span>Du er logget ind på den fælles oversigt.</span><button id="logout" type="button">Log ud</button></div>
 <div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
 <h2>Kontaktoplysninger og grupper</h2>
-<p>Redigér gruppenavne, telefonnumre og e-mailadresser her. Tryk på Gem for at dele ændringerne med alle.</p>
+<p>Se gruppenavne og redigér telefonnumre og e-mailadresser her. Tryk på Gem for at dele ændringerne med alle.</p>
 <div class="contacts" id="contacts"></div>
-<div class="actions"><button type="button" id="saveContacts">Gem grupper og kontaktoplysninger</button><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button><button type="button" class="danger" id="resetOldData">Sikkerhedskopiér og nulstil gamle reservationer</button></div>
+<div class="actions"><button type="button" id="saveContacts">Gem grupper og kontaktoplysninger</button><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button></div>
 <p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; datoer er fjernet. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
 </section>
 </main>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script>
 'use strict';
+// Load Firebase before using it; retry from an alternative CDN if a script is blocked.
+function loadScript(url){
+ return new Promise((resolve,reject)=>{
+  const tag=document.createElement('script');
+  const timeout=setTimeout(()=>{tag.remove();reject(new Error('Timeout: '+url))},12000);
+  tag.src=url;
+  tag.onload=()=>{clearTimeout(timeout);resolve()};
+  tag.onerror=()=>{clearTimeout(timeout);tag.remove();reject(new Error('Kunne ikke hente: '+url))};
+  document.head.append(tag);
+ });
+}
+async function loadFirebase(){
+ for(const file of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-database-compat.js']){
+  let loaded=false;
+  for(const url of [
+   'https://www.gstatic.com/firebasejs/10.12.5/'+file,
+   'https://cdn.jsdelivr.net/npm/firebase@10.12.5/'+file
+  ]){
+   try{await loadScript(url);loaded=true;break}catch(err){console.warn(err.message)}
+  }
+  if(!loaded)throw new Error('Firebase-biblioteket kunne ikke indlæses. Kontrollér internetforbindelsen eller prøv en anden browser.');
+ }
+ if(typeof window.firebase==='undefined')throw new Error('Firebase blev ikke tilgængelig efter indlæsning.');
+}
+function startWebsite(){
 const destinations=['Chamonix','Sydfrankrig','Rom','Toscana','Mallorca'];
 const defaultGroups=[
 {name:'Orla & Hanne',phone:'+45 40 37 80 60',email:'olindpo@gmail.com'},
@@ -100,12 +122,25 @@ function populate(){
  }
  refreshOptions();
 }
+// Booking values remain the original saved group names for full backward compatibility.
+// Never clear a booking just because a contact name is no longer in the group list.
+let savedReservations={};
 function refreshOptions(){
  for(const [key,sel] of selectors){
-  const old=sel.value;sel.replaceChildren();
+  const saved=typeof savedReservations[key]==='string'?savedReservations[key]:'';
+  sel.replaceChildren();
   const blank=document.createElement('option');blank.value='';blank.textContent='Ikke udfyldt';sel.append(blank);
-  groups.forEach(g=>{if(!g.name.trim())return;const opt=document.createElement('option');opt.value=g.name;opt.textContent=g.name;sel.append(opt)});
-  sel.value=[...sel.options].some(o=>o.value===old)?old:'';
+  groups.forEach(g=>{
+   if(!g.name.trim())return;
+   const opt=document.createElement('option');opt.value=g.name;opt.textContent=g.name;sel.append(opt);
+  });
+  // Keep legacy reservations visible without altering or deleting Firebase data.
+  if(saved && ![...sel.options].some(o=>o.value===saved)){
+   const legacy=document.createElement('option');
+   legacy.value=saved;legacy.textContent=saved+' (eksisterende reservation)';
+   sel.append(legacy);
+  }
+  sel.value=saved;
   updateColor(sel);
  }
 }
@@ -113,18 +148,20 @@ function drawContacts(){
  contactsEl.replaceChildren();
  groups.forEach((g,i)=>{
   const box=document.createElement('div');box.className='contact';
-  const title=document.createElement('strong');title.textContent='Gruppe '+(i+1);box.append(title);
-  for(const [field,label,type] of [['name','Gruppenavn','text'],['phone','Telefon','tel'],['email','E-mail','email']]){
+  const title=document.createElement('strong');title.textContent=g.name || 'Unavngiven gruppe';box.append(title);
+  for(const [field,label,type] of [['phone','Telefon','tel'],['email','E-mail','email']]){
    const lab=document.createElement('label');lab.textContent=label;
-   const input=document.createElement('input');input.type=type;input.value=g[field]||'';input.dataset.index=i;input.dataset.field=field;
-   input.addEventListener('input',()=>{groups[i][field]=input.value;if(field==='name')refreshOptions()});
+   const input=document.createElement('input');input.type=type;input.value=g[field]||'';
+   input.dataset.index=i;input.dataset.field=field;
+   input.addEventListener('input',()=>{groups[i][field]=input.value});
    lab.append(input);box.append(lab);
   }
   contactsEl.append(box);
  });
 }
 function renderReservations(data={}){
- for(const [key,sel] of selectors){const saved=typeof data[key]==='string'?data[key]:'';sel.value=[...sel.options].some(o=>o.value===saved)?saved:'';updateColor(sel)}
+ savedReservations=data;
+ refreshOptions();
 }
 function downloadJson(data,filename){
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
@@ -161,9 +198,14 @@ try{
  });
  for(const [key,sel] of selectors)sel.addEventListener('change',async()=>{
   if(!initialized||!reservationsRef)return;
-  const value=sel.value;updateColor(sel);sel.disabled=true;status('Gemmer ændring…');
-  try{await reservationsRef.child(key).set(value||null);status('● Forbundet – ændringer gemmes og deles automatisk')}
-  catch(err){status('Ændringen kunne ikke gemmes: '+err.message,true)}finally{sel.disabled=false}
+  const value=sel.value;
+  updateColor(sel);sel.disabled=true;status('Gemmer ændring…');
+  try{
+   await reservationsRef.child(key).set(value||null);
+   if(value)savedReservations[key]=value;else delete savedReservations[key];
+   status('● Forbundet – ændringer gemmes og deles automatisk');
+  }catch(err){refreshOptions();status('Ændringen kunne ikke gemmes: '+err.message,true)}
+  finally{sel.disabled=false}
  });
  document.getElementById('saveContacts').addEventListener('click',async()=>{
   if(!contactsRef)return;
@@ -172,20 +214,13 @@ try{
  });
  document.getElementById('downloadBackup').addEventListener('click',async()=>{
   if(!reservationsRef||!contactsRef)return;
-  try{const [r,c]=await Promise.all([reservationsRef.once('value'),contactsRef.once('value')]);downloadJson({createdAt:new Date().toISOString(),reservations:r.val()||{},contacts:c.val()||{}},'dk22-backup-before-reset.json');status('Sikkerhedskopi downloadet')}
+  try{const [r,c]=await Promise.all([reservationsRef.once('value'),contactsRef.once('value')]);downloadJson({createdAt:new Date().toISOString(),reservations:r.val()||{},contacts:c.val()||{}},'dk22-sikkerhedskopi.json');status('Sikkerhedskopi downloadet')}
   catch(err){status('Backup kunne ikke oprettes: '+err.message,true)}
  });
- document.getElementById('resetOldData').addEventListener('click',async()=>{
-  if(!reservationsRef||!contactsRef)return;
-  if(!confirm('Dette downloader først en sikkerhedskopi og sletter derefter alle gamle reservationer. Fortsæt?'))return;
-  try{
-   const [r,c]=await Promise.all([reservationsRef.once('value'),contactsRef.once('value')]);
-   downloadJson({createdAt:new Date().toISOString(),reservations:r.val()||{},contacts:c.val()||{}},'dk22-backup-before-reset.json');
-   await reservationsRef.remove();
-   groups=defaultGroups.map(g=>({...g}));
-   await contactsRef.set({groups});
-   renderReservations({});drawContacts();refreshOptions();status('Gamle reservationer nulstillet. Sikkerhedskopi downloadet.')
-  }catch(err){status('Nulstilling mislykkedes: '+err.message,true)}
- });
 }catch(err){status('Firebase-fejl: '+err.message,true)}
+}
+loadFirebase().then(startWebsite).catch(err=>{
+ document.getElementById('status').textContent='Firebase-fejl: '+err.message;
+ document.getElementById('status').classList.add('error');
+});
 </script></body></html>
