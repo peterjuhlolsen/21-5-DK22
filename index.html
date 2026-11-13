@@ -30,10 +30,7 @@ select{width:100%;max-width:240px;padding:9px;border:1px solid #ccd8e2;border-ra
 select.filled{background:#d9efff;border-color:#83badb}select:focus{outline:2px solid #247eb0}
 select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;padding:8px 12px;border-radius:8px;background:#e9f3fa;color:#17445d}
 .status.error{background:#ffe8e8;color:#8b2222}h2{margin-top:32px}
-.contacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.contact{background:white;border-radius:10px;padding:16px;box-shadow:0 2px 12px #122e4510}
-.contact strong{display:block;margin-bottom:8px}.contact label{display:block;font-size:14px;margin:8px 0}
-.contact input,.loginbox input{width:100%;padding:10px;border:1px solid #b7cbd9;border-radius:8px;font:inherit}
+.loginbox input{width:100%;padding:10px;border:1px solid #b7cbd9;border-radius:8px;font:inherit}
 .note{font-size:13px;margin-top:15px;line-height:1.5}.loginbox{max-width:480px;background:#fff;border-radius:14px;padding:24px;box-shadow:0 4px 20px #122e4514}
 .loginbox h2{margin-top:0}.loginbox form{display:grid;gap:14px}.loginbox label{display:grid;gap:5px;font-weight:600}
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
@@ -47,11 +44,8 @@ select:disabled{opacity:.5;cursor:wait}.status{font-size:14px;font-weight:650;pa
 <section id="privateContent" hidden>
 <div class="toolbar"><span>Du er logget ind på den fælles oversigt.</span><button id="logout" type="button">Log ud</button></div>
 <div class="table-wrap"><table><thead><tr><th>Uge</th><th>Chamonix</th><th>Sydfrankrig</th><th>Rom</th><th>Toscana</th><th>Mallorca</th></tr></thead><tbody id="rows"></tbody></table></div>
-<h2>Kontaktoplysninger og grupper</h2>
-<p>Se gruppenavne og redigér telefonnumre og e-mailadresser her. Tryk på Gem for at dele ændringerne med alle.</p>
-<div class="contacts" id="contacts"></div>
-<div class="actions"><button type="button" id="saveContacts">Gem grupper og kontaktoplysninger</button><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button></div>
-<p class="note">Der vises kun de 21 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; uge 1, 8, 32 og 42 har også en kort reservation i alle destinationer, og uge 16 har en kort reservation i Chamonix. Reservationer og kontaktoplysninger gemmes i Firebase og deles automatisk.</p>
+<div class="actions"><button type="button" class="secondary" id="downloadBackup">Download sikkerhedskopi</button></div>
+<p class="note">Der vises 19 grupper i reservationsmenuerne. Kalenderen viser ugenummer 1–52 for 2027; uge 1, 8, 32 og 42 har også en kort reservation i alle destinationer, og uge 16 har en kort reservation i Chamonix. Reservationer gemmes i Firebase og deles automatisk.</p>
 </section>
 </main>
 <script>
@@ -82,29 +76,7 @@ async function loadFirebase(){
 }
 function startWebsite(){
 const destinations=['Chamonix','Sydfrankrig','Rom','Toscana','Mallorca'];
-const defaultGroups=[
-{name:'Orla & Hanne',phone:'+45 40 37 80 60',email:'olindpo@gmail.com'},
-{name:'Annette & Henrik',phone:'+45 26 35 56 52',email:'henrikanette@outlook.dk'},
-{name:'Lise & Steen',phone:'+45 30 93 71 74',email:'lisefalsner@gmail.com'},
-{name:'Tanja & Christian',phone:'+45 20 95 87 05',email:'tekd@me.com'},
-{name:'Charlotte & Preben',phone:'+45 28 44 71 13',email:'charlotte@butho.dk'},
-{name:'Ellen & Jan',phone:'+45 24 61 42 15',email:'janogellen@mail.dk'},
-{name:'Helle & Henrik',phone:'+45 41 16 30 37',email:'skov.wagner@gmail.com'},
-{name:'Marianne & Ole',phone:'+45 20 99 22 80',email:'joachim8@mail.dk'},
-{name:'Anite & Søren',phone:'+45 31 12 00 94',email:'s.brynningsen@mail.tele.dk'},
-{name:'Pia & Mogens',phone:'+45 23 45 54',email:'mogens.r.jensen@gmail.com'},
-{name:'Lene & Ole',phone:'+45 21 20 04 40',email:'lene@baunbaek.dk'},
-{name:'Liane & Jan Michael',phone:'+45 42 14 29 52',email:'lianepedersen@live.dk'},
-{name:'Sarah & Lars',phone:'51 61 83 23',email:'katz_sarah@hotmail.com'},
-{name:'Marina',phone:'+45 40 10 46 92',email:'marinanorgaard@gmail.com'},
-{name:'Helene & Peter',phone:'+45 27 20 89 13',email:'peterjuhlolsen@gmail.com'},
-{name:'Marie & Lasse',phone:'+45 31 52 52 46',email:'l_lindegaard@proton.me'},
-{name:'Charlotte & Nichlas',phone:'+45 26 81 46 32',email:'charlotte@0209.dk'},
-{name:'Erik',phone:'+45 20 19 74 12',email:'erb@kromannreumert.com'},
-{name:'Henriette & Jean',phone:'+45 25 26 76 06',email:'jeanekwork@icloud.com'},
-{name:'Lene & Søren',phone:'+45 30 38 04 22',email:'erenbjerg@mail.dk'},
-{name:'Birgitte & Søren',phone:'+45 30 58 25 39',email:'henrik.o.madsen@dnv.com'}
-];
+const groups=['Orla & Hanne', 'Annette & Henrik', 'Lise & Steen', 'Tanja & Christian', 'Charlotte & Preben', 'Ellen & Jan', 'Marianne & Ole', 'Pia & Mogens', 'Lene & Ole', 'Liane & Jan Michael', 'Sarah & Lars', 'Marina', 'Helene & Peter', 'Marie & Lasse', 'Charlotte & Nichlas', 'Erik', 'Henriette & Jean', 'Lene & Søren', 'Birgitte & Søren'];
 const privateContent=document.getElementById('privateContent');
 const loginBox=document.getElementById('loginBox');
 const loginForm=document.getElementById('loginForm');
@@ -112,8 +84,7 @@ const SHARED_LOGIN_EMAIL='peterjuhlolsen@gmail.com';
 const AUTHORIZED_UID='oAJkjlPAe1gt8RTetQ0hOvRcD4D3';
 const passwordInput=document.getElementById('loginPassword');
 const loginError=document.getElementById('loginError');
-const contactsEl=document.getElementById('contacts');
-let contactsRef=null,reservationsRef=null,initialized=false,groups=defaultGroups.map(x=>({...x}));
+let reservationsRef=null,initialized=false;
 const tbody=document.getElementById('rows'),selectors=new Map(),statusEl=document.getElementById('status');
 function status(message,error=false){statusEl.textContent=message;statusEl.classList.toggle('error',error)}
 function toggle(enabled){for(const s of selectors.values())s.disabled=!enabled}
@@ -149,15 +120,16 @@ function populate(){
 }
 // Booking values remain the original saved group names for full backward compatibility.
 // Never clear a booking just because a contact name is no longer in the group list.
+const removedGroups=['Helle & Henrik','Anite & Søren'];
 let savedReservations={};
 function refreshOptions(){
  for(const [key,sel] of selectors){
-  const saved=typeof savedReservations[key]==='string'?savedReservations[key]:'';
+  const original=typeof savedReservations[key]==='string'?savedReservations[key]:'';
+  const saved=removedGroups.includes(original)?'':original;
   sel.replaceChildren();
   const blank=document.createElement('option');blank.value='';blank.textContent='Ikke udfyldt';sel.append(blank);
-  groups.forEach(g=>{
-   if(!g.name.trim())return;
-   const opt=document.createElement('option');opt.value=g.name;opt.textContent=g.name;sel.append(opt);
+  groups.forEach(name=>{
+   const opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.append(opt);
   });
   // Keep legacy reservations visible without altering or deleting Firebase data.
   if(saved && ![...sel.options].some(o=>o.value===saved)){
@@ -169,21 +141,6 @@ function refreshOptions(){
   updateColor(sel);
  }
 }
-function drawContacts(){
- contactsEl.replaceChildren();
- groups.forEach((g,i)=>{
-  const box=document.createElement('div');box.className='contact';
-  const title=document.createElement('strong');title.textContent=g.name || 'Unavngiven gruppe';box.append(title);
-  for(const [field,label,type] of [['phone','Telefon','tel'],['email','E-mail','email']]){
-   const lab=document.createElement('label');lab.textContent=label;
-   const input=document.createElement('input');input.type=type;input.value=g[field]||'';
-   input.dataset.index=i;input.dataset.field=field;
-   input.addEventListener('input',()=>{groups[i][field]=input.value});
-   lab.append(input);box.append(lab);
-  }
-  contactsEl.append(box);
- });
-}
 function renderReservations(data={}){
  savedReservations=data;
  refreshOptions();
@@ -192,7 +149,7 @@ function downloadJson(data,filename){
  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
 }
-populate();drawContacts();
+populate();
 const firebaseConfig={
  apiKey:"AIzaSyAsrQXHn_FCI-057t7wHZKZPL5Q5R4qNn0",
  authDomain:"dk22-343b2.firebaseapp.com",
@@ -208,18 +165,12 @@ try{
  document.getElementById('logout').addEventListener('click',()=>auth.signOut());
  auth.onAuthStateChanged(user=>{
   if(reservationsRef){reservationsRef.off();reservationsRef=null}
-  if(contactsRef){contactsRef.off();contactsRef=null}
   initialized=false;toggle(false);privateContent.hidden=true;loginBox.hidden=!!user;
   if(!user){status('Log ind for at se og ændre reservationer');return}
   if(user.uid!==AUTHORIZED_UID){loginBox.hidden=false;status('Forkert fælleskonto. Log ind med den fælles adgangskode.',true);auth.signOut();return}
   status('Indlæser fælles reservationer…');
-  reservationsRef=db.ref('reservationer2027');contactsRef=db.ref('kontaktoplysninger2027');
+  reservationsRef=db.ref('reservationer2027');
   reservationsRef.on('value',snap=>{renderReservations(snap.val()||{});initialized=true;toggle(true);privateContent.hidden=false;status('● Forbundet – ændringer gemmes og deles automatisk')},err=>{toggle(false);status('Adgang til reservationerne blev afvist: '+err.message,true)});
-  contactsRef.on('value',snap=>{
-   const val=snap.val();
-   if(val&&Array.isArray(val.groups)){groups=val.groups.map(g=>({name:g.name||'',phone:g.phone||'',email:g.email||''}));drawContacts();refreshOptions()}
-   else{groups=defaultGroups.map(g=>({...g}));drawContacts();refreshOptions()}
-  },err=>status('Kunne ikke læse kontaktoplysninger: '+err.message,true));
  });
  for(const [key,sel] of selectors)sel.addEventListener('change',async()=>{
   if(!initialized||!reservationsRef)return;
@@ -232,14 +183,9 @@ try{
   }catch(err){refreshOptions();status('Ændringen kunne ikke gemmes: '+err.message,true)}
   finally{sel.disabled=false}
  });
- document.getElementById('saveContacts').addEventListener('click',async()=>{
-  if(!contactsRef)return;
-  try{await contactsRef.set({groups:groups.map(g=>({name:g.name.trim(),phone:g.phone.trim(),email:g.email.trim()}))});refreshOptions();status('Grupper og kontaktoplysninger gemt')}
-  catch(err){status('Kunne ikke gemme kontaktoplysninger: '+err.message,true)}
- });
  document.getElementById('downloadBackup').addEventListener('click',async()=>{
-  if(!reservationsRef||!contactsRef)return;
-  try{const [r,c]=await Promise.all([reservationsRef.once('value'),contactsRef.once('value')]);downloadJson({createdAt:new Date().toISOString(),reservations:r.val()||{},contacts:c.val()||{}},'dk22-sikkerhedskopi.json');status('Sikkerhedskopi downloadet')}
+  if(!reservationsRef)return;
+  try{const r=await reservationsRef.once('value');downloadJson({createdAt:new Date().toISOString(),reservations:r.val()||{}},'dk22-sikkerhedskopi.json');status('Sikkerhedskopi downloadet')}
   catch(err){status('Backup kunne ikke oprettes: '+err.message,true)}
  });
 }catch(err){status('Firebase-fejl: '+err.message,true)}
