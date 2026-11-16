@@ -128,7 +128,7 @@ function refreshOptions(){
   const saved=removedGroups.includes(original)?'':original;
   sel.replaceChildren();
   const blank=document.createElement('option');blank.value='';blank.textContent='Ikke udfyldt';sel.append(blank);
-  groups.forEach(name=>{
+  groups.filter(name=>name!=='Helle & Henrik').forEach(name=>{
    const opt=document.createElement('option');opt.value=name;opt.textContent=name;sel.append(opt);
   });
   // Keep legacy reservations visible without altering or deleting Firebase data.
